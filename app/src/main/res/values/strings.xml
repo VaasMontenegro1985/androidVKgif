@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">GIF Loader</string>
+
+    <!-- Основные строки -->
+    <string name="loading">Загрузка GIF...</string>
+    <string name="retry">Повторить</string>
+    <string name="error_message">Ошибка загрузки. Проверьте подключение к интернету.</string>
+    <string name="image">Изображение</string>
+    <string name="gif_description">Анимированное изображение GIF</string>
+
+    <!-- Для API -->
+    <string name="base_url">https://api.giphy.com/v1/</string>
+    <string name="endpoint_trending">gifs/trending</string>
+
+    <!-- Ошибки -->
+    <string name="error_network">Ошибка сети</string>
+    <string name="error_api">Ошибка API</string>
+    <string name="error_unknown">Неизвестная ошибка</string>
+</resources>
