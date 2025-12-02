@@ -1,46 +1,45 @@
 package com.vasya.gifload
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
-import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
 
-class MainViewModel : ViewModel() {
+sealed class UiState {
+    object Loading : UiState()
+    data class Success(val images: List<ImageItem>) : UiState()
+    data class Error(val message: String) : UiState()
+    data class Paginating(val images: List<ImageItem>) : UiState()
+}
+
+
+class MainViewModel(application: Application) : AndroidViewModel(application) {
+
     private val _uiState = MutableStateFlow<UiState>(UiState.Loading)
-    val uiState: StateFlow<UiState> = _uiState.asStateFlow()
-
-    private val _images = MutableStateFlow(emptyList<ImageItem>())
-    val images: StateFlow<List<ImageItem>> = _images.asStateFlow()
+    val uiState: StateFlow<UiState> = _uiState
 
     private var currentPage = 0
-    private var canLoadMore = true
-    private var isLoading = false
+    private var isLoadingMore = false
 
-    // Кэш для хранения загруженных данных
-    private val memoryCache = ConcurrentHashMap<Int, List<ImageItem>>()
+    // Получаем API ключ из ресурсов приложения
+    private val apiKey: String = application.getString(R.string.giphy_api_key)
 
     init {
         loadInitialData()
     }
 
     fun loadInitialData() {
-        if (isLoading) return
-
-        viewModelScope.launch {
-            isLoading = true
-            currentPage = 0
-            canLoadMore = true
-
+        viewModelScope.launch(Dispatchers.IO) {
+            _uiState.value = UiState.Loading
             try {
-                _uiState.value = UiState.Loading
-
+                currentPage = 0
                 val response = giphyApi.getTrendingGifs(
-                    limit = 20,
-                    offset = currentPage * 20
+                    apiKey = apiKey,
+                    limit = getApplication<Application>().resources.getInteger(R.integer.pagination_limit),
+                    offset = 0
                 )
 
                 val newImages = response.data.map { gif ->
@@ -52,46 +51,41 @@ class MainViewModel : ViewModel() {
                     )
                 }
 
-                memoryCache[currentPage] = newImages
-                _images.value = newImages
-                currentPage++
-                _uiState.value = UiState.Success(_images.value)
+                _uiState.value = UiState.Success(newImages)
+                currentPage = 1
+                isLoadingMore = false
 
             } catch (e: Exception) {
-                _uiState.value = UiState.Error("Ошибка загрузки: ${e.message ?: "Неизвестная ошибка"}")
-            } finally {
-                isLoading = false
+                _uiState.value = UiState.Error(e.message ?: "Неизвестная ошибка")
+                isLoadingMore = false
             }
         }
     }
 
     fun loadMoreData() {
-        if (isLoading || !canLoadMore) return
+        // Не загружаем, если уже грузится или нет данных
+        if (isLoadingMore) return
 
-        viewModelScope.launch {
-            isLoading = true
+        val currentData = _uiState.value
+        if (currentData !is UiState.Success && currentData !is UiState.Paginating) return
 
+        isLoadingMore = true
+        val currentImages = when (currentData) {
+            is UiState.Success -> currentData.images
+            is UiState.Paginating -> currentData.images
+            else -> emptyList()
+        }
+
+        // Показываем состояние "идёт загрузка"
+        _uiState.value = UiState.Paginating(currentImages)
+
+        viewModelScope.launch(Dispatchers.IO) {
             try {
-                _uiState.value = UiState.PaginationLoading
-
-                // Проверяем кэш
-                val cachedData = memoryCache[currentPage]
-                if (cachedData != null) {
-                    _images.value = _images.value + cachedData
-                    currentPage++
-                    _uiState.value = UiState.Success(_images.value)
-                    return@launch
-                }
-
                 val response = giphyApi.getTrendingGifs(
+                    apiKey = apiKey,
                     limit = 20,
                     offset = currentPage * 20
                 )
-
-                if (response.data.isEmpty()) {
-                    canLoadMore = false
-                    return@launch
-                }
 
                 val newImages = response.data.map { gif ->
                     ImageItem(
@@ -102,24 +96,19 @@ class MainViewModel : ViewModel() {
                     )
                 }
 
-                memoryCache[currentPage] = newImages
-                _images.value = _images.value + newImages
+                val allImages = currentImages + newImages
+                _uiState.value = UiState.Success(allImages)
                 currentPage++
-                _uiState.value = UiState.Success(_images.value)
+                isLoadingMore = false
 
             } catch (e: Exception) {
-                _uiState.value = UiState.Error("Ошибка загрузки: ${e.message ?: "Неизвестная ошибка"}")
-            } finally {
-                isLoading = false
+                val errorMessage = MyApp.instance.getString(
+                    R.string.error_loading,
+                    e.message ?: MyApp.instance.getString(R.string.error_loading)
+                )
+                _uiState.value = UiState.Error(errorMessage)
+                isLoadingMore = false
             }
         }
-    }
-
-    fun retry() {
-        loadInitialData()
-    }
-
-    fun getImageIndex(imageId: String): Int {
-        return _images.value.indexOfFirst { it.id == imageId } + 1
     }
 }

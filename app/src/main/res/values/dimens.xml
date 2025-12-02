@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Карточки и сетка -->
+    <dimen name="grid_padding">8dp</dimen>
+    <dimen name="grid_spacing">8dp</dimen>
+    <dimen name="card_corner_radius">12dp</dimen>
+    <dimen name="card_elevation">4dp</dimen>
+
+    <!-- Индикатор загрузки -->
+    <dimen name="progress_large">48dp</dimen>
+    <dimen name="progress_medium">32dp</dimen>
+    <dimen name="progress_padding">16dp</dimen>
+
+    <!-- Текст и отступы -->
+    <dimen name="padding_small">4dp</dimen>
+    <dimen name="padding_medium">8dp</dimen>
+    <dimen name="padding_large">16dp</dimen>
+
+    <!-- Номер на карточке -->
+    <dimen name="badge_size">24dp</dimen>
+    <dimen name="badge_margin">8dp</dimen>
+
+    <!-- Аспектное соотношение -->
+    <fraction name="image_min_aspect_ratio">50%</fraction>
+    <fraction name="image_max_aspect_ratio">200%</fraction>
+</resources>
