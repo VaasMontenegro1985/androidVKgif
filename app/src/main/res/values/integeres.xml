@@ -13,6 +13,6 @@
     <integer name="read_timeout_seconds">30</integer>
 
     <!-- API лимиты -->
-    <integer name="initial_load_limit">20</integer>
-    <integer name="pagination_limit">20</integer>
+    <integer name="initial_load_limit">10</integer>
+    <integer name="pagination_limit">5</integer>
 </resources>

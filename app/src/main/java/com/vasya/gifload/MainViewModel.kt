@@ -38,7 +38,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 currentPage = 0
                 val response = giphyApi.getTrendingGifs(
                     apiKey = apiKey,
-                    limit = getApplication<Application>().resources.getInteger(R.integer.pagination_limit),
+                    limit = getApplication<Application>().resources.getInteger(R.integer.initial_load_limit),
                     offset = 0
                 )
 
