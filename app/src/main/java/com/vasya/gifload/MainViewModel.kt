@@ -56,7 +56,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 isLoadingMore = false
 
             } catch (e: Exception) {
-                _uiState.value = UiState.Error(e.message ?: "Неизвестная ошибка")
+                val errorMessage = MyApp.instance.getString(
+                    R.string.error_loading,
+                    e.message ?: MyApp.instance.getString(R.string.error_loading)
+                )
+                _uiState.value = UiState.Error(errorMessage)
                 isLoadingMore = false
             }
         }
@@ -83,7 +87,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 val response = giphyApi.getTrendingGifs(
                     apiKey = apiKey,
-                    limit = 20,
+                    limit = getApplication<Application>().resources.getInteger(R.integer.pagination_limit),
                     offset = currentPage * 20
                 )
 
